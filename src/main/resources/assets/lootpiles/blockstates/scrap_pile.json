@@ -1,0 +1,12 @@
+{
+  "multipart": [
+    {
+      "when": { "depleted": "false" },
+      "apply": { "model": "lootpiles:block/scrap_pile" }
+    },
+    {
+      "when": { "depleted": "true" },
+      "apply": { "model": "lootpiles:block/scrap_pile_empty" }
+    }
+  ]
+}

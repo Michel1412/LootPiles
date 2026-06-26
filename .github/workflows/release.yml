@@ -1,0 +1,106 @@
+name: Publish Mod to CurseForge
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      mod_version:
+        description: 'Mod version (e.g. 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Fetch compile-only libs
+        run: |
+          bash scripts/ci-setup-libs.sh
+          ls -la libs/
+
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VER="${{ github.event.inputs.mod_version }}"
+          else
+            VER="${GITHUB_REF_NAME#v}"
+          fi
+          echo "mod_version=$VER" >> "$GITHUB_OUTPUT"
+
+          REF="${{ github.ref_name }}"
+          if echo "$REF$VER" | grep -qiE '\-alpha'; then
+            echo "version_type=alpha" >> "$GITHUB_OUTPUT"
+          elif echo "$REF$VER" | grep -qiE '\-beta'; then
+            echo "version_type=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "version_type=release" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve changelog source
+        id: changelog
+        run: |
+          FILE="docs/changelogs/${{ steps.meta.outputs.mod_version }}.md"
+          if [ -f "$FILE" ]; then
+            echo "file=$FILE" >> "$GITHUB_OUTPUT"
+            echo "generate=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "generate=false" >> "$GITHUB_OUTPUT"
+            echo "inline=Release ${{ steps.meta.outputs.mod_version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate CurseForge secrets and project
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+        run: |
+          echo "CI commit: $(git rev-parse --short HEAD)"
+          bash scripts/curseforge-validate.sh
+
+      - name: Build mod
+        run: |
+          chmod +x gradlew
+          ./gradlew build --stacktrace -Pmod_version=${{ steps.meta.outputs.mod_version }}
+
+      - name: Upload to CurseForge
+        uses: Kir-Antipov/mc-publish@v3.3
+        env:
+          CURSEFORGE_TOKEN: ${{ env.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ env.CURSEFORGE_PROJECT_ID }}
+        with:
+          curseforge-id: ${{ env.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ env.CURSEFORGE_TOKEN }}
+          files: build/libs/!(*-@(dev|sources|javadoc)).jar
+          version: ${{ steps.meta.outputs.mod_version }}
+          version-type: ${{ steps.meta.outputs.version_type }}
+          name: Loot Piles ${{ steps.meta.outputs.mod_version }}
+          java: |
+            Java 21
+          loaders: |
+            neoforge
+          game-versions: |
+            1.21.1
+          changelog-file: ${{ steps.changelog.outputs.file }}
+          changelog: ${{ steps.changelog.outputs.inline }}
+          changelog-type: markdown
+          github-generate-changelog: ${{ steps.changelog.outputs.generate == 'true' }}
+          github-tag: ${{ github.event_name == 'push' && github.ref_name || '' }}

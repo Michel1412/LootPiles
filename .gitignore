@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+out/
+runs/
+run/
+run-client/
+run-server/
+run-data/
+run/
+run-data/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.launch
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated
+src/generated/

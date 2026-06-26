@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Fetch compile-only libs
+        run: bash scripts/ci-setup-libs.sh
+
+      - name: Build mod
+        run: |
+          chmod +x gradlew
+          ./gradlew build --stacktrace
+
+      - name: Upload jar
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lootpiles-jar
+          path: build/libs/!(*-@(dev|sources|javadoc)).jar

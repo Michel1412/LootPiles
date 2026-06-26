@@ -1,0 +1,4 @@
+# Dev server defaults for NeoForge userdev (username: Dev)
+online-mode=false
+enforce-secure-profile=false
+spawn-protection=0

@@ -1,0 +1,35 @@
+{
+	"credit": "Made with Blockbench - Depleted State for Java 1.21.1",
+	"texture_size": [64, 64],
+	"textures": {
+		"0": "lootpiles:block/lootpile_base",
+		"particle": "lootpiles:block/lootpile_base"
+	},
+	"elements": [
+		{
+			"name": "base_esmagada",
+			"from": [1, 0, 1],
+			"to": [15, 0.5, 15],
+			"faces": {
+				"north": {"uv": [2, 1.5, 2.375, 5.25], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"east": {"uv": [1, 1.375, 1.125, 2.3125], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"south": {"uv": [2, 1, 2.125, 1.375], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"west": {"uv": [1.375, 1.0625, 1.5, 2], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"up": {"uv": [0.9375, 0, 0, 0.375], "texture": "#0", "tintindex": 0},
+				"down": {"uv": [0.75, 0, 0.375, 0.375], "texture": "#0", "tintindex": 0}
+			}
+		},
+		{
+			"name": "detrito_chato",
+			"from": [4, 0.5, 3],
+			"to": [12, 0.8, 11],
+			"faces": {
+				"north": {"uv": [1.25, 0, 1.5, 0.5], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"east": {"uv": [0.9375, 0.3125, 1.4375, 0.625], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"south": {"uv": [1.375, 0.5, 1.625, 1], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"west": {"uv": [1.0625, 0.875, 1.375, 1.375], "rotation": 90, "texture": "#0", "tintindex": 0},
+				"up": {"uv": [0.25, 1.5625, 0, 1.875], "texture": "#0", "tintindex": 0}
+			}
+		}
+	]
+}
