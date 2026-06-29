@@ -1,0 +1,46 @@
+def gradlePropertiesFile = rootProject.file('gradle.properties')
+def semverPattern = ~/^\d+\.\d+\.\d+(-[A-Za-z0-9._-]+)?$/
+
+ext.updateModVersion = { String newVersion ->
+    if (!(newVersion ==~ semverPattern)) {
+        throw new GradleException(
+                "Invalid mod version '${newVersion}'. Expected format like 1.0.2 or 1.0.2-beta"
+        )
+    }
+
+    if (!gradlePropertiesFile.isFile()) {
+        throw new GradleException("Missing gradle.properties at ${gradlePropertiesFile.absolutePath}")
+    }
+
+    def originalText = gradlePropertiesFile.getText('UTF-8')
+    if (!originalText.contains('mod_version=')) {
+        throw new GradleException("mod_version property not found in gradle.properties")
+    }
+
+    def updatedText = originalText.replaceFirst(/(?m)^mod_version=.*$/, "mod_version=${newVersion}")
+    if (updatedText == originalText) {
+        throw new GradleException("Failed to update mod_version in gradle.properties")
+    }
+
+    gradlePropertiesFile.write(updatedText, 'UTF-8')
+    logger.lifecycle("Loot Piles: mod_version set to ${newVersion} in gradle.properties")
+    return newVersion
+}
+
+def requestedUpdate = findProperty('update')?.toString()?.trim()
+def resolvedModVersion = mod_version.toString()
+
+if (requestedUpdate) {
+    resolvedModVersion = ext.updateModVersion(requestedUpdate)
+}
+
+ext.resolvedModVersion = resolvedModVersion
+version = resolvedModVersion
+
+tasks.register('printVersion') {
+    group = 'versioning'
+    description = 'Prints the current mod version from gradle.properties.'
+    doLast {
+        println project.version
+    }
+}

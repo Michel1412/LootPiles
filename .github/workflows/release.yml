@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 jobs:
-  publish:
+  publish-1-21-1:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,12 +31,12 @@ jobs:
           cache: gradle
 
       - name: Fetch compile-only libs
-        run: |
-          bash scripts/ci-setup-libs.sh
-          ls -la libs/
+        working-directory: v1.21.1
+        run: bash ./scripts/ci-setup-libs.sh
 
       - name: Resolve release metadata
         id: meta
+        working-directory: v1.21.1
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VER="${{ github.event.inputs.mod_version }}"
@@ -56,6 +56,7 @@ jobs:
 
       - name: Resolve changelog source
         id: changelog
+        working-directory: v1.21.1
         run: |
           FILE="docs/changelogs/${{ steps.meta.outputs.mod_version }}.md"
           if [ -f "$FILE" ]; then
@@ -69,14 +70,16 @@ jobs:
           fi
 
       - name: Validate CurseForge secrets and project
+        working-directory: v1.21.1
         env:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           CURSEFORGE_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
         run: |
           echo "CI commit: $(git rev-parse --short HEAD)"
-          bash scripts/curseforge-validate.sh
+          bash ./scripts/curseforge-validate.sh
 
-      - name: Build mod
+      - name: Build mod (1.21.1)
+        working-directory: v1.21.1
         run: |
           chmod +x gradlew
           ./gradlew build --stacktrace -Pmod_version=${{ steps.meta.outputs.mod_version }}
@@ -89,7 +92,7 @@ jobs:
         with:
           curseforge-id: ${{ env.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ env.CURSEFORGE_TOKEN }}
-          files: build/libs/!(*-@(dev|sources|javadoc)).jar
+          files: v1.21.1/build/libs/!(*-@(dev|sources|javadoc)).jar
           version: ${{ steps.meta.outputs.mod_version }}
           version-type: ${{ steps.meta.outputs.version_type }}
           name: Loot Piles ${{ steps.meta.outputs.mod_version }}
@@ -99,7 +102,7 @@ jobs:
             neoforge
           game-versions: |
             1.21.1
-          changelog-file: ${{ steps.changelog.outputs.file }}
+          changelog-file: v1.21.1/${{ steps.changelog.outputs.file }}
           changelog: ${{ steps.changelog.outputs.inline }}
           changelog-type: markdown
           github-generate-changelog: ${{ steps.changelog.outputs.generate == 'true' }}

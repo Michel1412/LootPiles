@@ -1,0 +1,15 @@
+{
+  "textures": {
+    "layer0": "lootpiles:item/scrap_grayscale"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 0],
+      "faces": {
+        "north": { "uv": [0, 0, 16, 16], "texture": "#layer0", "tintindex": 0 },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#layer0", "tintindex": 0 }
+      }
+    }
+  ]
+}

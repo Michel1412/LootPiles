@@ -1,0 +1,135 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.141'
+    id 'idea'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+apply from: rootProject.file('gradle/version-update.gradle')
+
+group = mod_group_id
+
+sourceSets.main.resources {
+    srcDir('src/generated/resources')
+    exclude("**/*.bbmodel")
+    exclude("src/generated/**/.cache")
+}
+
+repositories {
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
+    maven {
+        name = 'Jared'
+        url = 'https://maven.blamejared.com/'
+    }
+}
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = 'UTF-8'
+}
+
+legacyForge {
+    enable {
+        forgeVersion = project.neo_version
+    }
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+
+    runs {
+        client {
+            client()
+            gameDirectory = project.file('run-client')
+        }
+
+        server {
+            server()
+            gameDirectory = project.file('run-server')
+            programArgument '--nogui'
+        }
+
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+}
+
+dependencies {
+    // API on compile classpath (Mojang mappings); runtime jars remapped by ModDevGradle legacy.
+    compileOnly "mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"
+    modRuntimeOnly "mezz.jei:jei-${minecraft_version}-forge:${jei_version}"
+
+    modCompileOnly "curse.maven:jade-${jade_curse_project}:${jade_curse_file}"
+    modRuntimeOnly "curse.maven:jade-${jade_curse_project}:${jade_curse_file}"
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.named('runServer').configure {
+    doFirst {
+        def serverDir = project.file('run-server')
+        serverDir.mkdirs()
+
+        def ops = new File(serverDir, 'ops.json')
+        if (!ops.exists()) {
+            ops.text = project.file('dev/server/ops.json').text
+        }
+
+        def props = new File(serverDir, 'server.properties')
+        if (props.exists()) {
+            def text = props.text
+            text = text.replaceAll('online-mode=true', 'online-mode=false')
+            text = text.replaceAll('enforce-secure-profile=true', 'enforce-secure-profile=false')
+            text = text.replaceAll('spawn-protection=16', 'spawn-protection=0')
+            props.text = text
+        }
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
