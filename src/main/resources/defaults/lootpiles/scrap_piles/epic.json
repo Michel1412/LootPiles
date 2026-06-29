@@ -1,0 +1,13 @@
+{
+  "type": "Epic",
+  "hex": "#A335EE",
+  "cooldown": 3000,
+  "scrapDrop": { "min": 9, "max": 12 },
+  "rolls": { "min": 3, "max": 7 },
+  "entries": [
+    { "item": "minecraft:diamond", "weight": 8, "min": 1, "max": 2 },
+    { "item": "minecraft:emerald", "weight": 10, "min": 2, "max": 4 },
+    { "item": "minecraft:gold_ingot", "weight": 12, "min": 2, "max": 6 },
+    { "item": "minecraft:ender_pearl", "weight": 4, "min": 1, "max": 2 }
+  ]
+}

@@ -2,10 +2,11 @@ package com.nerdsquadrados.lootpiles.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.nerdsquadrados.lootpiles.LootPilesBlocks;
 import com.nerdsquadrados.lootpiles.block.ScrapPileBlock;
-import com.nerdsquadrados.lootpiles.block.ScrapTier;
 import com.nerdsquadrados.lootpiles.cooldown.ScrapCooldownManager;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileDefinition;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileDefinitionLoader;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
@@ -34,15 +35,16 @@ public final class ScrapPileCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildSpawnNode() {
         return Commands.literal("spawn")
-                .then(Commands.argument("tier", ScrapTierArgument.tier())
+                .then(Commands.argument("pile", ScrapPileIdArgument.pileId())
+                        .suggests(ScrapPileIdArgument::suggestPileIds)
                         .executes(ctx -> spawnAt(
                                 ctx.getSource(),
-                                ScrapTierArgument.getTier(ctx, "tier"),
+                                ScrapPileIdArgument.getPileId(ctx, "pile"),
                                 ctx.getSource().getPlayerOrException().blockPosition()))
                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                 .executes(ctx -> spawnAt(
                                         ctx.getSource(),
-                                        ScrapTierArgument.getTier(ctx, "tier"),
+                                        ScrapPileIdArgument.getPileId(ctx, "pile"),
                                         BlockPosArgument.getLoadedBlockPos(ctx, "pos")))));
     }
 
@@ -60,11 +62,10 @@ public final class ScrapPileCommands {
                         .executes(ctx -> status(ctx.getSource(), BlockPosArgument.getLoadedBlockPos(ctx, "pos"))));
     }
 
-    private static int spawnAt(CommandSourceStack source, ScrapTier tier, BlockPos pos) {
+    private static int spawnAt(CommandSourceStack source, String pileId, BlockPos pos) {
         ServerLevel level = source.getLevel();
-        BlockState state = LootPilesBlocks.SCRAP_PILE.get().defaultBlockState()
-                .setValue(ScrapPileBlock.TIER, tier)
-                .setValue(ScrapPileBlock.DEPLETED, false);
+        ScrapPileRegistry.RegisteredScrapPile registered = ScrapPileRegistry.byId(pileId).orElseThrow();
+        BlockState state = registered.block().get().defaultBlockState().setValue(ScrapPileBlock.DEPLETED, false);
 
         if (!level.setBlock(pos, state, Block.UPDATE_ALL)) {
             source.sendFailure(Component.translatable("commands.lootpiles.spawn.failed", pos.getX(), pos.getY(), pos.getZ()));
@@ -72,7 +73,12 @@ public final class ScrapPileCommands {
         }
 
         ScrapCooldownManager.get(level).removeCooldown(pos);
-        source.sendSuccess(() -> Component.translatable("commands.lootpiles.spawn.success", tier.getSerializedName(), pos.getX(), pos.getY(), pos.getZ()), true);
+        ScrapPileDefinition definition = ScrapPileDefinitionLoader.loadDefinition(pileId);
+        source.sendSuccess(() -> Component.translatable(
+                "commands.lootpiles.spawn.success",
+                definition.displayType(),
+                pos.getX(), pos.getY(), pos.getZ()
+        ), true);
         return 1;
     }
 
@@ -104,12 +110,12 @@ public final class ScrapPileCommands {
         ServerLevel level = source.getLevel();
         BlockState state = level.getBlockState(pos);
 
-        if (!(state.getBlock() instanceof ScrapPileBlock)) {
+        if (!(state.getBlock() instanceof ScrapPileBlock scrapPileBlock)) {
             source.sendFailure(Component.translatable("commands.lootpiles.status.not_scrap_pile", pos.getX(), pos.getY(), pos.getZ()));
             return 0;
         }
 
-        ScrapTier tier = state.getValue(ScrapPileBlock.TIER);
+        ScrapPileDefinition definition = ScrapPileDefinitionLoader.loadDefinition(scrapPileBlock.getPileId());
         ScrapCooldownManager manager = ScrapCooldownManager.get(level);
         long remaining = manager.getRemainingTicks(pos, level.getGameTime());
         boolean depleted = state.getValue(ScrapPileBlock.DEPLETED);
@@ -117,7 +123,7 @@ public final class ScrapPileCommands {
         if (remaining <= 0L) {
             source.sendSuccess(() -> Component.translatable(
                     "commands.lootpiles.status.ready",
-                    tier.getSerializedName(),
+                    definition.displayType(),
                     pos.getX(), pos.getY(), pos.getZ(),
                     depleted
             ), false);
@@ -125,7 +131,7 @@ public final class ScrapPileCommands {
             long minutes = Math.max(1, (remaining + 1199) / 1200);
             source.sendSuccess(() -> Component.translatable(
                     "commands.lootpiles.status.cooldown",
-                    tier.getSerializedName(),
+                    definition.displayType(),
                     pos.getX(), pos.getY(), pos.getZ(),
                     minutes
             ), false);

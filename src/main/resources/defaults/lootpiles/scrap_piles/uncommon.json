@@ -1,0 +1,13 @@
+{
+  "type": "Uncommon",
+  "hex": "#1EFF00",
+  "cooldown": 1200,
+  "scrapDrop": { "min": 3, "max": 6 },
+  "rolls": { "min": 2, "max": 5 },
+  "entries": [
+    { "item": "minecraft:iron_ingot", "weight": 15, "min": 1, "max": 3 },
+    { "item": "minecraft:copper_ingot", "weight": 12, "min": 2, "max": 5 },
+    { "item": "minecraft:redstone", "weight": 10, "min": 2, "max": 6 },
+    { "item": "minecraft:gold_nugget", "weight": 8, "min": 3, "max": 9 }
+  ]
+}

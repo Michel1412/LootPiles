@@ -1,8 +1,10 @@
 package com.nerdsquadrados.lootpiles.block;
 
-import com.nerdsquadrados.lootpiles.config.ScrapPileConfig;
 import com.nerdsquadrados.lootpiles.cooldown.ScrapCooldownManager;
 import com.nerdsquadrados.lootpiles.loot.ScrapLootService;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileDefinition;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileDefinitionLoader;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -18,7 +20,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
@@ -26,21 +27,25 @@ import net.minecraft.world.phys.BlockHitResult;
 import java.util.List;
 
 public class ScrapPileBlock extends Block {
-    public static final EnumProperty<ScrapTier> TIER = EnumProperty.create("tier", ScrapTier.class);
     public static final BooleanProperty DEPLETED = BooleanProperty.create("depleted");
 
     protected static final VoxelShape SLAB_SHAPE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 8.0D, 16.0D);
 
-    public ScrapPileBlock(Properties properties) {
+    private final String pileId;
+
+    public ScrapPileBlock(String pileId, Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any()
-                .setValue(TIER, ScrapTier.COMMON)
-                .setValue(DEPLETED, false));
+        this.pileId = pileId;
+        registerDefaultState(stateDefinition.any().setValue(DEPLETED, false));
+    }
+
+    public String getPileId() {
+        return pileId;
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(TIER, DEPLETED);
+        builder.add(DEPLETED);
     }
 
     @Override
@@ -67,6 +72,16 @@ public class ScrapPileBlock extends Block {
     }
 
     @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!level.isClientSide() && !state.is(newState.getBlock())) {
+            if (level instanceof ServerLevel serverLevel) {
+                ScrapCooldownManager.get(serverLevel).removeCooldown(pos);
+            }
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    }
+
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
@@ -86,12 +101,13 @@ public class ScrapPileBlock extends Block {
             return InteractionResult.CONSUME;
         }
 
-        ScrapTier tier = state.getValue(TIER);
-        ScrapLootService.spawnLoot(serverLevel, pos, tier, player);
+        ScrapPileDefinition definition = ScrapPileDefinitionLoader.loadDefinition(pileId);
+        ScrapPileRegistry.RegisteredScrapPile registered = ScrapPileRegistry.byId(pileId).orElseThrow();
+        ScrapLootService.spawnLoot(serverLevel, pos, definition, registered.scrapItem().get());
 
         level.playSound(null, pos, SoundEvents.GRAVEL_BREAK, SoundSource.BLOCKS, 1.0F, 0.9F);
 
-        long readyTime = gameTime + ScrapPileConfig.getCooldownTicks(tier);
+        long readyTime = gameTime + definition.cooldownTicks();
         manager.addCooldown(pos, readyTime);
         level.setBlock(pos, state.setValue(DEPLETED, true), Block.UPDATE_ALL);
 
@@ -100,7 +116,7 @@ public class ScrapPileBlock extends Block {
 
     public static void clearDepletedState(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof ScrapPileBlock && state.getValue(DEPLETED)) {
+        if (state.getBlock() instanceof ScrapPileBlock scrapPileBlock && state.getValue(DEPLETED)) {
             level.setBlock(pos, state.setValue(DEPLETED, false), Block.UPDATE_ALL);
         }
     }

@@ -1,0 +1,13 @@
+{
+  "type": "Rare",
+  "hex": "#0070DD",
+  "cooldown": 1800,
+  "scrapDrop": { "min": 7, "max": 9 },
+  "rolls": { "min": 3, "max": 6 },
+  "entries": [
+    { "item": "minecraft:gold_ingot", "weight": 12, "min": 1, "max": 3 },
+    { "item": "minecraft:lapis_lazuli", "weight": 10, "min": 3, "max": 8 },
+    { "item": "minecraft:emerald", "weight": 5, "min": 1, "max": 2 },
+    { "item": "minecraft:iron_ingot", "weight": 15, "min": 2, "max": 5 }
+  ]
+}

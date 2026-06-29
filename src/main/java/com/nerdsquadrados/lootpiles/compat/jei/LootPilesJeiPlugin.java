@@ -1,7 +1,7 @@
 package com.nerdsquadrados.lootpiles.compat.jei;
 
 import com.nerdsquadrados.lootpiles.LootPiles;
-import com.nerdsquadrados.lootpiles.LootPilesItems;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileRegistry;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IRecipeRegistration;
@@ -18,30 +18,12 @@ public class LootPilesJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        registration.addIngredientInfo(
-                new ItemStack(LootPilesItems.SCRAP_PILE_COMMON.get()),
-                mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
-                Component.translatable("jei.lootpiles.scrap_pile.info")
-        );
-        registration.addIngredientInfo(
-                new ItemStack(LootPilesItems.SCRAP_PILE_UNCOMMON.get()),
-                mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
-                Component.translatable("jei.lootpiles.scrap_pile.info")
-        );
-        registration.addIngredientInfo(
-                new ItemStack(LootPilesItems.SCRAP_PILE_RARE.get()),
-                mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
-                Component.translatable("jei.lootpiles.scrap_pile.info")
-        );
-        registration.addIngredientInfo(
-                new ItemStack(LootPilesItems.SCRAP_PILE_EPIC.get()),
-                mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
-                Component.translatable("jei.lootpiles.scrap_pile.info")
-        );
-        registration.addIngredientInfo(
-                new ItemStack(LootPilesItems.SCRAP_PILE_LEGENDARY.get()),
-                mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
-                Component.translatable("jei.lootpiles.scrap_pile.info")
-        );
+        for (ScrapPileRegistry.RegisteredScrapPile registered : ScrapPileRegistry.all()) {
+            registration.addIngredientInfo(
+                    new ItemStack(registered.blockItem().get()),
+                    mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
+                    Component.translatable("jei.lootpiles.scrap_pile.info")
+            );
+        }
     }
 }

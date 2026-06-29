@@ -1,7 +1,8 @@
 package com.nerdsquadrados.lootpiles.event;
 
 import com.nerdsquadrados.lootpiles.LootPiles;
-import com.nerdsquadrados.lootpiles.LootPilesItems;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileDefinitionLoader;
+import com.nerdsquadrados.lootpiles.registry.ScrapPileRegistry;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -15,14 +16,14 @@ public class ModCreativeTabEvents {
     @SubscribeEvent
     public static void onBuildCreativeTabContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-            event.accept(LootPilesItems.SCRAP_PILE_COMMON);
-            event.accept(LootPilesItems.SCRAP_PILE_UNCOMMON);
-            event.accept(LootPilesItems.SCRAP_PILE_RARE);
-            event.accept(LootPilesItems.SCRAP_PILE_EPIC);
-            event.accept(LootPilesItems.SCRAP_PILE_LEGENDARY);
+            for (ScrapPileRegistry.RegisteredScrapPile registered : ScrapPileRegistry.all()) {
+                event.accept(registered.blockItem());
+            }
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            event.accept(LootPilesItems.METAL_SCRAP);
+            for (ScrapPileRegistry.RegisteredScrapPile registered : ScrapPileRegistry.all()) {
+                event.accept(registered.scrapItem());
+            }
         }
     }
 }
