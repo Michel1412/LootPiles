@@ -1,0 +1,40 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+
+[[mods]]
+modId="lootpiles"
+version="1.0.0-1.20.1"
+displayName="Loot Piles"
+authors="Nerds Quadrados"
+description='''
+Scrap pile loot blocks with tier-based cooldowns, admin commands, and performance-focused server architecture.
+'''
+
+[[dependencies.lootpiles]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.lootpiles]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.lootpiles]]
+modId="jei"
+mandatory=false
+versionRange="[0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.lootpiles]]
+modId="jade"
+mandatory=false
+versionRange="[0,)"
+ordering="NONE"
+side="BOTH"

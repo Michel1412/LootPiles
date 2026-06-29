@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "depleted=false": {
+      "model": "lootpiles:block/scrap_pile"
+    },
+    "depleted=true": {
+      "model": "lootpiles:block/scrap_pile_depleted"
+    }
+  }
+}
